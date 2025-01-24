@@ -1,0 +1,72 @@
+# 这是一个示例 mods.toml 文件。它包含与加载模组相关的数据。
+# 文件中有一些必填字段（#mandatory）和许多可选字段（#optional）。
+# 文件的整体格式为标准的 TOML 格式，版本 v0.5.0。
+# 注意，文件中包含几个 TOML 列表。
+# 关于 TOML 格式的更多信息，请访问：https://github.com/toml-lang/toml
+# 模组加载器的名称，用于加载模组。对于常规的 FML @Mod 模组，应为 javafml
+modLoader="javafml" #mandatory
+# 与上述模组加载器匹配的版本范围。对于常规的 FML @Mod，这将是 Forge 的版本。
+loaderVersion="${loader_version_range}" #mandatory
+# 模组的许可证。这是强制性的元数据，便于理解你的再分发属性。
+# 选择许可证的选项，请访问：https://choosealicense.com/。默认为“保留所有权利”。
+license="${mod_license}"
+# 当模组出现问题时，用户可以访问的 URL。
+#issueTrackerURL="https://change.me.to.your.issue.tracker.example.invalid/" #optional
+# 如果你的模组仅是客户端功能，且没有多人游戏功能（无论是专用服务器还是局域网开放），
+# 将此设置为 true，Forge 会自动设置正确的 displayTest 并在专用服务器上跳过加载你的模组。
+#clientSideOnly=true #optional - 默认为 false（如果未指定）
+# 模组列表 - 允许的数量由具体的模组加载器决定
+[[mods]] #mandatory
+# 模组的唯一标识符
+modId="${mod_id}" #mandatory
+# 模组的版本号
+version="${mod_version}" #mandatory
+# 模组的显示名称
+displayName="${mod_name}" #mandatory
+# 用于查询此模组更新的 URL。请参考 JSON 更新规范：https://docs.minecraftforge.net/en/latest/misc/updatechecker/
+#updateJSONURL="https://change.me.example.invalid/updates.json"  #optional
+# 模组的“主页”URL，显示在模组 UI 中
+#displayURL="https://change.me.to.your.mods.homepage.example.invalid/"  #optional
+# 模组 JAR 根目录中包含的用于显示的徽标文件名
+#logoFile="examplemod.png"  #optional
+# 显示在模组 UI 中的文本字段
+#credits=""  #optional
+# 显示在模组 UI 中的文本字段
+authors="${mod_authors}"  #optional
+# 控制模组在服务器连接屏幕中的显示
+# MATCH_VERSION：如果客户端和服务器的版本不同，将显示红色 X。这是默认行为，适用于有服务器和客户端组件的模组。
+# IGNORE_SERVER_VERSION：如果模组仅在服务器上存在，不会显示红色 X。适用于仅服务器端的模组。
+# IGNORE_ALL_VERSION：即使模组在客户端或服务器上存在，也不会显示红色 X。适用于没有服务器组件的模组。
+# NONE：不设置任何显示测试，需要自行实现，详见 IExtensionPoint.DisplayTest。
+# 注意：这不是指定模组加载环境（客户端或服务器）的指令。模组应在任何环境中加载（即使什么都不做）。
+#displayTest="MATCH_VERSION"  # 如果未指定，当 clientSideOnly=false 时默认为 MATCH_VERSION，否则为 IGNORE_ALL_VERSION (#optional)
+
+# 模组的描述文本（多行！）(#mandatory)
+description='''${mod_description}'''
+# 依赖项 - 使用 . 表示特定模组 ID 的依赖。依赖项是可选的。
+[[dependencies.${mod_id}]]  #optional
+    # 依赖项的模组 ID
+    modId="forge"  #mandatory
+    # 该依赖是否必须存在 - 如果不是，必须指定加载顺序
+    mandatory=true  #mandatory
+    # 依赖项的版本范围
+    versionRange="${forge_version_range}"  #mandatory
+    # 依赖项的加载顺序 - 如果依赖项不是必须的，则必须指定 BEFORE 或 AFTER
+    # BEFORE - 此模组在依赖项之前加载
+    # AFTER - 此模组在依赖项之后加载
+    ordering="NONE"
+    # 依赖项适用的环境 - BOTH（客户端和服务器）、CLIENT 或 SERVER
+    side="BOTH"
+# 另一个依赖项
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    mandatory=true
+    # 声明当前 Minecraft 版本的最小值，直到下一个主版本（但不包括）
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# 特性是游戏环境的特定属性，你可能希望声明你的模组需要。此示例声明你的模组需要 OpenGL 版本 3.2 或更高。
+# 其他特性将被添加。它们是环境感知的，因此声明此特性不会阻止模组在服务器上加载。
+#[features.${mod_id}]
+#openGLVersion="[3.2,)"
