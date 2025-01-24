@@ -1,0 +1,167 @@
+package com.example.examplemod;
+
+import com.mojang.logging.LogUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+import org.slf4j.Logger;
+
+// The value here should match an entry in the META-INF/mods.toml file
+@Mod(ExampleMod.MODID)
+public class ExampleMod
+{
+    // Define mod id in a common place for everything to reference
+    // 定义模组ID，用于在整个模组中引用
+    public static final String MODID = "examplemod";
+
+    // Directly reference a slf4j logger
+    // 引用 SLF4J 日志记录器，用于记录日志信息
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    // Create a Deferred Register to hold Blocks which will all be registered under the "examplemod" namespace
+    // 创建一个延迟注册器，用于注册方块，所有方块将注册在 "examplemod" 命名空间下
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
+
+    // Create a Deferred Register to hold Items which will all be registered under the "examplemod" namespace
+    // 创建一个延迟注册器，用于注册物品，所有物品将注册在 "examplemod" 命名空间下
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+
+    // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "examplemod" namespace
+    // 创建一个延迟注册器，用于注册创造模式标签，所有标签将注册在 "examplemod" 命名空间下
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+
+    // Creates a new Block with the id "examplemod:example_block", combining the namespace and path
+    // 创建一个新的方块，其ID为 "examplemod:example_block"，结合了命名空间和路径
+    public static final RegistryObject<Block> EXAMPLE_BLOCK = BLOCKS.register("example_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)));
+
+    // Creates a new BlockItem with the id "examplemod:example_block", combining the namespace and path
+    // 创建一个新的方块物品，其ID为 "examplemod:example_block"，结合了命名空间和路径
+    public static final RegistryObject<Item> EXAMPLE_BLOCK_ITEM = ITEMS.register("example_block", () -> new BlockItem(EXAMPLE_BLOCK.get(), new Item.Properties()));
+
+    // Creates a new food item with the id "examplemod:example_item", nutrition 1 and saturation 2
+    // 创建一个新的食物物品，其ID为 "examplemod:example_item"，营养值为1，饱食度为2
+    public static final RegistryObject<Item> EXAMPLE_ITEM = ITEMS.register("example_item", () -> new Item(new Item.Properties().food(new FoodProperties.Builder()
+            .alwaysEat().nutrition(1).saturationMod(2f).build())));
+
+    // Creates a creative tab with the id "examplemod:example_tab" for the example item, that is placed after the combat tab
+    // 创建一个新的创造模式标签，其ID为 "examplemod:example_tab"，用于展示示例物品，该标签位于战斗标签之后
+    public static final RegistryObject<CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
+            .withTabsBefore(CreativeModeTabs.COMBAT) // 将该标签放置在战斗标签之前
+            .icon(() -> EXAMPLE_ITEM.get().getDefaultInstance()) // 设置标签的图标为示例物品
+            .displayItems((parameters, output) -> {
+                output.accept(EXAMPLE_ITEM.get()); // 将示例物品添加到标签中
+            }).build());
+
+    // 构造函数，用于初始化模组
+    public ExampleMod(FMLJavaModLoadingContext context)
+    {
+        // 获取模组事件总线
+        IEventBus modEventBus = context.getModEventBus();
+
+        // 注册 commonSetup 方法，用于在模组加载阶段执行
+        modEventBus.addListener(this::commonSetup);
+
+        // 注册延迟注册器到模组事件总线，以便在适当的时候注册方块、物品和创造模式标签
+        BLOCKS.register(modEventBus);
+        ITEMS.register(modEventBus);
+        CREATIVE_MODE_TABS.register(modEventBus);
+
+        // 注册到 MinecraftForge 的事件总线，以便监听游戏事件
+        MinecraftForge.EVENT_BUS.register(this);
+
+        // 注册物品到创造模式标签
+        modEventBus.addListener(this::addCreative);
+
+        // 注册模组的配置文件，以便 Forge 为我们创建和加载配置文件
+        context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+    }
+
+    // commonSetup 方法，用于在模组加载阶段执行的逻辑
+    private void commonSetup(final FMLCommonSetupEvent event)
+    {
+        // 在这里可以添加一些初始化逻辑，例如注册网络包、事件监听器等
+        LOGGER.info("Setup method registered!");
+    }
+
+    // addCreative 方法，用于将物品添加到创造模式标签
+    private void addCreative(CreativeModeTabEvent.BuildContents event)
+    {
+        // 检查事件是否是针对我们的创造模式标签
+        if (event.getTab() == EXAMPLE_TAB.get())
+        {
+            // 将示例物品添加到标签中
+            event.accept(EXAMPLE_ITEM.get());
+        }
+    }
+}
+// commonSetup 方法，用于在模组加载阶段执行的逻辑
+private void commonSetup(final FMLCommonSetupEvent event)
+{
+    // Some common setup code
+    // 执行一些通用的初始化逻辑
+    LOGGER.info("HELLO FROM COMMON SETUP");
+
+    // 根据配置文件中的设置，记录日志信息
+    if (Config.logDirtBlock)
+        LOGGER.info("DIRT BLOCK >> {}", ForgeRegistries.BLOCKS.getKey(Blocks.DIRT)); // 获取并记录 Dirt 方块的注册键
+
+    LOGGER.info(Config.magicNumberIntroduction + Config.magicNumber); // 记录配置文件中定义的“神奇数字”及其介绍
+
+    // 遍历配置文件中定义的物品列表，并记录每个物品的信息
+    Config.items.forEach((item) -> LOGGER.info("ITEM >> {}", item.toString()));
+}
+
+// addCreative 方法，用于将物品添加到创造模式标签
+private void addCreative(BuildCreativeModeTabContentsEvent event)
+{
+    // 检查事件是否是针对“建筑方块”标签
+    if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS)
+        event.accept(EXAMPLE_BLOCK_ITEM); // 将示例方块物品添加到“建筑方块”标签中
+}
+
+// 服务器启动事件监听
+// 使用 @SubscribeEvent 注解，让 Forge 的事件总线发现并调用该方法
+@SubscribeEvent
+public void onServerStarting(ServerStartingEvent event)
+{
+    // 当服务器启动时执行的逻辑
+    LOGGER.info("HELLO from server starting");
+}
+
+// 客户端事件监听类
+// 使用 @Mod.EventBusSubscriber 注解，自动注册类中所有使用 @SubscribeEvent 注解的方法
+@Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+public static class ClientModEvents
+{
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event)
+    {
+        // 客户端初始化逻辑
+        LOGGER.info("HELLO FROM CLIENT SETUP");
+
+        // 获取并记录当前玩家的用户名
+        LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+    }
+}

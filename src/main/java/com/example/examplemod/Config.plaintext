@@ -1,0 +1,74 @@
+package com.example.examplemod;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
+import net.minecraftforge.registries.ForgeRegistries;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+//这是一个示例配置类，用于展示如何使用 Forge 的配置 API。
+//虽然不是必须的，但建议使用配置类来保持代码的整洁和可维护性。
+@Mod.EventBusSubscriber(modid = ExampleMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+public class Config
+{
+    // 创建一个 ForgeConfigSpec.Builder 实例，用于构建配置项
+    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
+
+    // 定义一个布尔值配置项，用于决定是否在 common setup 阶段记录 dirt block 的日志
+    private static final ForgeConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
+            .comment("Whether to log the dirt block on common setup") // 添加注释，描述该配置项的作用
+            .define("logDirtBlock", true); // 定义配置项的名称和默认值
+
+    // 定义一个整数值配置项，用于存储一个“神奇数字”
+    private static final ForgeConfigSpec.IntValue MAGIC_NUMBER = BUILDER
+            .comment("A magic number") // 添加注释
+            .defineInRange("magicNumber", 42, 0, Integer.MAX_VALUE); // 定义名称、默认值和取值范围
+
+    // 定义一个字符串配置项，用于存储“神奇数字”的介绍信息
+    public static final ForgeConfigSpec.ConfigValue<String> MAGIC_NUMBER_INTRODUCTION = BUILDER
+            .comment("What you want the introduction message to be for the magic number") // 添加注释
+            .define("magicNumberIntroduction", "The magic number is... "); // 定义名称和默认值
+
+    // 定义一个字符串列表配置项，用于存储在 common setup 阶段记录的物品资源路径
+    private static final ForgeConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
+            .comment("A list of items to log on common setup.") // 添加注释
+            .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), Config::validateItemName); // 定义名称、默认值和验证方法
+
+    // 构建并返回配置规范对象
+    static final ForgeConfigSpec SPEC = BUILDER.build();
+
+    // 配置项对应的公共变量，用于在模组中访问配置值
+    public static boolean logDirtBlock;
+    public static int magicNumber;
+    public static String magicNumberIntroduction;
+    public static Set<Item> items;
+
+    // 验证方法，用于检查字符串是否为有效的物品资源路径
+    private static boolean validateItemName(final Object obj)
+    {
+        // 检查对象是否为字符串，并且对应的物品是否存在于 Forge 的物品注册表中
+        return obj instanceof final String itemName && ForgeRegistries.ITEMS.containsKey(new ResourceLocation(itemName));
+    }
+
+    // 监听 ModConfigEvent 事件，用于在配置加载时更新配置值
+    @SubscribeEvent
+    static void onLoad(final ModConfigEvent event)
+    {
+        // 从配置项中获取值，并赋值给对应的公共变量
+        logDirtBlock = LOG_DIRT_BLOCK.get();
+        magicNumber = MAGIC_NUMBER.get();
+        magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
+
+        // 将字符串列表转换为物品集合
+        items = ITEM_STRINGS.get().stream() // 获取配置中的字符串列表
+                .map(itemName -> ForgeRegistries.ITEMS.getValue(new ResourceLocation(itemName))) // 将每个字符串转换为对应的物品
+                .collect(Collectors.toSet()); // 收集到一个集合中
+    }
+}
